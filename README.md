@@ -86,7 +86,7 @@ $ curl -X GET http://pokemon.truelayer.com/status;echo
 ```
 If you want to destroy the K8S cluster, please run.
 ``` bash
-$ cd Truelayer/terraform
+$ cd pokemon_api_translator/terraform
 $ terraform destroy
 ```
 
