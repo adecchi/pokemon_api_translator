@@ -1,0 +1,16 @@
+version: "3"
+services:
+  py-dot-proxy:
+    build: ./
+    image: adecchi/truelayer:v1.0
+    container_name: truelayer_container
+    restart: always
+    ports:
+      - "80:8000/tcp"
+    environment:
+      MAX_PAYLOAD_LENGTH: "1024"
+    networks:
+      - pokemon_network
+networks:
+  pokemon_network:
+    driver: bridge
