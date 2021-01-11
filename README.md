@@ -90,6 +90,64 @@ $ cd pokemon_api_translator/terraform
 $ terraform destroy
 ```
 
+### RATE LIMIT:
+The rate limit was configured to 5 qps/rps/tps, counted by client IP, with a buffer for 25 burst which is non-delayed. 
+The burst number is 5 times the rate limit according to the [document](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rate-limiting).
+Therefore, we should be able to calculate the expected number of successful requests for the previous test with the formula:
+
+    successful requests = period * rate + burst
+
+That’s 20 second * 5 qps + 25 burst = 125 requests. It still doesn't look close to our test result of 371.
+To show the rate limit configuration, you can execute the following command once deployed with terraform:
+
+``` bash
+$ kubectl get pods -n kube-system | grep ingress-nginx-controller
+$ kubectl exec -it -n kube-system <POD-NAME> -- cat /etc/nginx/nginx.conf | grep limit
+```
+
+The http status code for rate limit is 503 (Services Unavailable), you can change it to 429 (too many request), modifying
+the setting:
+
+``` bash
+limit_req_status 429;
+limit_conn_status 429;
+```
+
+### UPDATE LIMIT:
+Edit the `ingress.tf` file line `6` and then execute:
+``` bash
+$ terraform fmt
+$ terraform validate
+$ terraform plan -out pokemon.plan
+$ terraform apply "pokemon.plan"
+```
+
+### CACHE:
+Cache is configured for 1 minute, we can get the status of our request looking the header `X-Cache-Status`
+Here we list the different state of the cache.
+``` bash
+X-Cache-Status: HIT
+X-Cache-Status: MISS
+X-Cache-Status: EXPIRED
+```
+To show the cache configuration, you can execute the following command once deployed with terraform:
+
+``` bash
+$ kubectl get pods -n kube-system | grep ingress-nginx-controller
+$ kubectl exec -it -n kube-system <POD-NAME> -- cat /etc/nginx/nginx.conf | grep keys_zone
+$ kubectl exec -it -n kube-system <POD-NAME> -- cat /etc/nginx/nginx.conf | grep proxy_zone
+```
+
+### UPDATE CACHE:
+Edit the `ingress.tf` file line `8` and then execute:
+``` bash
+$ terraform fmt
+$ terraform validate
+$ terraform plan -out pokemon.plan
+$ terraform apply "pokemon.plan"
+```
+
+
 ### PROMETHEUS SETUP:
 Get the prometheus endpoint running the following command.
 ``` bash
@@ -120,7 +178,7 @@ https://grafana.com/grafana/dashboards/9614
 ```
 
 ### LOAD TEST:
-Using Apache Benchmark (ab):
+Using Apache Benchmark (ab): You can append `-v 2` to visualize the http status code.
 ``` bash
 $ ab -n 1000 -c 100 -s 60 -m GET http://pokemon.truelayer.com/pokemon/charizard
 ```
@@ -208,9 +266,9 @@ It provides:
 - Easy CD/CI
 
 ### Pending Improvements
-- Improve/Add rate limit, exponential backoff and retries with the external APIs.
-- Improve LRU Cache.
-- Improve Exception Handling.  
+- Improve rate limit, exponential backoff and retries with the external APIs.
+- Improve LRU Cache and Ingress Cache.
+- Improve Exception Handling.
 - Improve liveness and readiness probes.
 - Create automation script to deploy all the requirements and application.
 - Improve test cases.
