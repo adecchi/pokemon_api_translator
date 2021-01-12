@@ -1,17 +1,21 @@
+"""
+@author: Alejandro Decchi
+@description:
+"""
 import httpx
 from fastapi import FastAPI
 import uvicorn
 import json
-import logging
-from src.mapping.mapping import Mapping
 
-FORMAT = "%(asctime)s %(name)-4s %(process)d %(levelname)-6s %(funcName)-8s %(message)s"
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger("Pokemon Translator")
-log_level = logging.DEBUG
-logger.setLevel(log_level)
+from src.mapping.mapping import Mapping
+from src.utils import get_logger
+
+
+logger = get_logger(__name__)
 
 app = FastAPI()
+
+__all__ = ["read_status", "read_cache_status", "read_pokemon"]
 
 
 @app.get("/status")

@@ -1,15 +1,13 @@
 import os
 import configparser
-import logging
 import re
 import methodtools
-from src.proxy.requests import Request
 
-FORMAT = "%(asctime)s %(name)-4s %(process)d %(levelname)-6s %(funcName)-8s %(message)s"
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger("Pokemon Translator")
-log_level = logging.DEBUG
-logger.setLevel(log_level)
+from src.proxy.requests import Request
+from src.utils import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class Mapping:
@@ -32,16 +30,10 @@ class Mapping:
             status, response = req.get(self.POKEMON_API_URL)
             if status:
                 pokemons = response['results']
-                finded = False
-                pokemon_datails = ''
-                for index, pokemon in enumerate(pokemons):
+                for pokemon in pokemons:
                     if pokemon['name'] == pokemon_name:
-                        finded = True
-                        pokemon_datails = pokemon
-                if finded:
-                    return True, pokemon_datails
-                else:
-                    return False, "Pokemon Not Found"
+                        return True, pokemon
+                return False, "Pokemon Not Found"
             else:
                 return status, response
         except Exception as ex:
@@ -53,19 +45,15 @@ class Mapping:
             status, response = req.get(pokemon['url'])
             if status:
                 details = response[self.POKEMON_API_DESCRIPTION]
-                finded = False
-                for index, details in enumerate(details):
+                for details in details:
                     text = details['flavor_text']
                     pokemon_name = pokemon['name']
                     if details['language']['name'] == self.POKEMON_API_LAN:
                         validation = re.match(r'^{}'.format(pokemon_name), text, re.IGNORECASE)
                         if validation:
                             data = details['flavor_text']
-                            finded = True
-                if finded:
-                    return True, data
-                else:
-                    return False, "Details not found for pokemon {}".format(pokemon['name'])
+                            return True, data
+                return False, "Details not found for pokemon {}".format(pokemon['name'])
             else:
                 return status, response
         except Exception as ex:
